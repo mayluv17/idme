@@ -1,6 +1,7 @@
 // import { authOptions } from "@/lib/auth";
 // import { getServerSession } from "next-auth";
 import { FC } from "react";
+import logo from "../logo.png";
 
 // import { ThemeToggle } from "./ThemeToggle";
 import { buttonVariants } from "./ui/Button";
@@ -11,10 +12,13 @@ const Header: FC = () => {
   //   const session = await getServerSession(authOptions);
 
   return (
-    <div className="fixed backdrop-blur-sm bg-white/75 dark:bg-slate-900/75 z-50 top-0 left-0 right-0 h-14 border-b border-slate-300 dark:border-slate-700 shadow-sm flex items-center justify-between mb-10">
+    <div className="fixed backdrop-blur-sm bg-white/75 dark:bg-slate-900/75 z-50 top-0 left-0 right-0 h-14 border-b border-slate-300 dark:border-slate-700 shadow-sm flex items-center justify-between">
       <div className="container max-w-7xl mx-auto w-full flex justify-between items-center">
         <a href="/" className={buttonVariants({ variant: "link" })}>
-          MyID
+          <img src={logo} width={24} />{" "}
+          <span className="font-extrabold font ml-2 decoration-transparent">
+            biztag
+          </span>
         </a>
 
         <div className="md:hidden">{/* <ThemeToggle /> */}</div>

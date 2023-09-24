@@ -55,7 +55,7 @@ const Register: FC = () => {
   return (
     <>
       <div className="flex justify-center">
-        <div className="md:w-[340px] rounded-sm border shadow mt-20">
+        <div className="md:w-[340px] mt-28 rounded-sm border shadow items-center">
           <div className="flex flex-col p-6 space-y-1">
             <h3 className="font-semibold tracking-tight text-2xl">
               Create an account

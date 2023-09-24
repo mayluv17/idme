@@ -8,7 +8,7 @@ const Login: FC<loginProps> = ({}) => {
   return (
     <>
       <div className="flex justify-center">
-        <div className="md:w-[340px] rounded-sm border shadow mt-16">
+        <div className="md:w-[340px] rounded-sm border shadow mt-28">
           <div className="flex flex-col p-6 space-y-1">
             <h3 className="font-semibold tracking-tight text-2xl">
               Create an account
