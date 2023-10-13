@@ -1,10 +1,44 @@
+import { FC, useState } from "react";
 import { Input } from "../components/ui/Input";
 import { Button } from "../components/ui/Button";
-import { FC } from "react";
+import { supabase } from "../lib/api";
+import { toast } from "react-hot-toast";
 
 interface loginProps {}
+interface formData {
+  email: string;
+  password: string;
+}
 
 const Login: FC<loginProps> = ({}) => {
+  const [formData, setFormData] = useState<formData>({
+    email: "",
+    password: "",
+  });
+
+  const handleForm = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleSubmit = async (
+    e: React.MouseEvent<HTMLButtonElement, MouseEvent>
+  ) => {
+    const { error } = await supabase.auth.signInWithPassword({
+      email: formData.email,
+      password: formData.password,
+    });
+
+    if (!error) {
+      toast.success("Login successful!");
+      return;
+    }
+    toast.error(error.message);
+    // setIsLogoUploaded(false);
+  };
   return (
     <>
       <div className="flex justify-center">
@@ -63,6 +97,9 @@ const Login: FC<loginProps> = ({}) => {
                 id="email"
                 placeholder="m@example.com"
                 type="email"
+                name="email"
+                onChange={(e) => handleForm(e)}
+                required
               />
             </div>
             <div className="grid gap-2">
@@ -76,12 +113,19 @@ const Login: FC<loginProps> = ({}) => {
                 className="flex h-9 w-full rounded-md border border-Input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                 id="password"
                 type="password"
+                name="password"
+                onChange={(e) => handleForm(e)}
+                required
               />
             </div>
           </div>
           <div className="flex items-center p-6 pt-0">
-            <Button variant={"default"} className="h-9 px-4 py-2 w-full">
-              Create account
+            <Button
+              variant={"default"}
+              onClick={handleSubmit}
+              className="h-9 px-4 py-2 w-full"
+            >
+              SIgn In
             </Button>
           </div>
         </div>

@@ -1,9 +1,10 @@
-import React, { FC, useState, useMemo } from "react";
+import React, { FC, useEffect, useState } from "react";
 import { Input } from "../components/ui/Input";
 import { Button } from "../components/ui/Button";
 import { supabase } from "../lib/api";
 import { toast } from "react-hot-toast";
 import { v4 as uuidv4 } from "uuid";
+import { Navigate, useLocation } from "react-router-dom";
 
 interface CreateBusinessProps {}
 interface formData {
@@ -11,32 +12,51 @@ interface formData {
   website: string;
   address: string;
 }
-const CreateBusiness: FC<CreateBusinessProps> = ({}) => {
+const CreateBusiness: FC<CreateBusinessProps> = () => {
   const [formData, setFormData] = useState<formData>({
     businessname: "",
     website: "",
     address: "",
   });
   const [isLogoUploaded, setIsLogoUploaded] = useState<boolean>(false);
-  const businessUid = useMemo(() => uuidv4(), []);
+  const [businessUid, setBusinessId] = useState<string>("");
+  const [userId, setUserId] = useState<string>();
+  let location = useLocation();
+
+  useEffect(() => {
+    const getUser = async () => {
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (user !== null) {
+          setUserId(user.id);
+        } else {
+          setUserId("");
+        }
+      } catch (e) {}
+    };
+    getUser();
+  }, []);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const logo: File = (e.target.files as FileList)[0];
     const fileUid = uuidv4();
     const { data, error } = await supabase.storage
       .from("businessLogo")
-      .upload(`public/${businessUid}/${fileUid}.jpg`, logo, {
+      .upload(`${userId}/${fileUid}.jpg`, logo, {
         cacheControl: "3600",
         upsert: false,
       });
-    if (error) {
-      toast.error(error.message);
-      setIsLogoUploaded(false);
-    }
+
     if (data) {
       toast.success("Succefully uploaded image");
+      setBusinessId(fileUid);
       setIsLogoUploaded(true);
+      return;
     }
+    toast.error(error.message);
+    setIsLogoUploaded(false);
   };
 
   const handleForm = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -51,15 +71,20 @@ const CreateBusiness: FC<CreateBusinessProps> = ({}) => {
     e: React.MouseEvent<HTMLButtonElement, MouseEvent>
   ) => {
     e.preventDefault();
-    // const {
-    //   data: { user },
-    // } = await supabase.auth.getUser();
-    // console.log(user);
-    const { error } = await supabase.from("business_name").insert(formData);
+
+    const { error } = await supabase
+      .from("business_name")
+      .insert({ ...formData, uid: userId, businessUid: businessUid });
     if (error) {
       toast.error(error.message);
     } else {
       toast.success("Business Successfully created!");
+
+      <Navigate
+        to={`/createID/${businessUid}`}
+        state={{ from: location }}
+        replace
+      />;
     }
   };
 
@@ -76,98 +101,99 @@ const CreateBusiness: FC<CreateBusinessProps> = ({}) => {
             </p>
           </div>
           <form>
-          <div className="p-6 pt-0 grid gap-4">
-            <div className="grid grid-cols-2 gap-6">
-              <div>
-                <label
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  htmlFor="logo"
-                >
-                  Upload Company Logo
-                </label>
-                <Input
-                  className="flex h-9 w-full rounded-md border border-Input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                  id="logo"
-                  type="file"
-                  name="logo"
-                  onChange={(e) => handleUpload(e)}
-                  required
-                />
+            <div className="p-6 pt-0 grid gap-4">
+              <div className="grid grid-cols-2 gap-6">
+                <div>
+                  <label
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    htmlFor="logo"
+                  >
+                    Upload Company Logo
+                  </label>
+                  <Input
+                    className="flex h-9 w-full rounded-md border border-Input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                    id="logo"
+                    type="file"
+                    name="logo"
+                    onChange={(e) => handleUpload(e)}
+                    required
+                  />
+                </div>
+                <div className="">
+                  <label
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    htmlFor="businessname"
+                  >
+                    Business Name
+                  </label>
+                  <Input
+                    className="flex h-9 w-full rounded-md border border-Input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                    id="businessname"
+                    type="text"
+                    name="businessname"
+                    disabled={!isLogoUploaded}
+                    onChange={(e) => handleForm(e)}
+                    required
+                    value={formData.businessname}
+                  />
+                </div>
               </div>
-              <div className="">
-                <label
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  htmlFor="businessname"
-                >
-                  Business Name
-                </label>
-                <Input
-                  className="flex h-9 w-full rounded-md border border-Input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                  id="businessname"
-                  type="text"
-                  name="businessname"
-                  disabled={!isLogoUploaded}
-                  onChange={(e) => handleForm(e)}
-                  required
-                  value={formData.businessname}
-                />
-              </div>
-            </div>
 
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t"></span>
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t"></span>
+                </div>
               </div>
-            </div>
 
-            <div className="grid grid-cols-2 gap-2">
-              <div className="">
-                <label
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  htmlFor="website"
-                >
-                  Website
-                </label>
-                <Input
-                  className="flex h-9 w-full rounded-md border border-Input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                  id="website"
-                  type="text"
-                  name="website"
-                  placeholder="www.businesswebsite.com"
-                  disabled={!isLogoUploaded}
-                  onChange={(e) => handleForm(e)}
-                  value={formData.website}
-                />
-              </div>
-              <div>
-                <label
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  htmlFor="address"
-                >
-                  Address
-                </label>
-                <Input
-                  className="flex h-9 w-full rounded-md border border-Input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                  id="address"
-                  type="text"
-                  name="address"
-                  disabled={!isLogoUploaded}
-                  onChange={(e) => handleForm(e)}
-                  // value={registrationInput.username}
-                />
+              <div className="grid grid-cols-2 gap-2">
+                <div className="">
+                  <label
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    htmlFor="website"
+                  >
+                    Website
+                  </label>
+                  <Input
+                    className="flex h-9 w-full rounded-md border border-Input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                    id="website"
+                    type="text"
+                    name="website"
+                    placeholder="www.businesswebsite.com"
+                    disabled={!isLogoUploaded}
+                    onChange={(e) => handleForm(e)}
+                    value={formData.website}
+                  />
+                </div>
+                <div>
+                  <label
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    htmlFor="address"
+                  >
+                    Address
+                  </label>
+                  <Input
+                    className="flex h-9 w-full rounded-md border border-Input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                    id="address"
+                    type="text"
+                    name="address"
+                    disabled={!isLogoUploaded}
+                    onChange={(e) => handleForm(e)}
+                    // value={registrationInput.username}
+                  />
+                </div>
               </div>
             </div>
-          </div>
-          <div className="flex items-center p-6 pt-0">
-            <Button
-              onClick={(e) => submitBusiness(e)}
-              type="submit"
-              variant={"default"}
-              className="h-9 px-4 py-2 w-full"
-            >
-              Setup Business
-            </Button>
-          </div>
+            <div className="flex items-center p-6 pt-0">
+              <Button
+                onClick={(e) => submitBusiness(e)}
+                type="submit"
+                variant={"default"}
+                className="h-9 px-4 py-2 w-full"
+              >
+                Setup Business
+              </Button>
+            </div>
+          </form>
         </div>
       </div>
     </>

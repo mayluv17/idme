@@ -44,8 +44,6 @@ const Register: FC = () => {
     if (error) {
       setErrors(error.message);
       toast(errors);
-      console.log(registrationInput);
-      console.log(errors);
     } else {
       setErrors("");
       toast("Login successfully!");
